@@ -6,17 +6,11 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Create a non-root user to run the application securely
-RUN addgroup --system appgroup && adduser --system --group appuser
-
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application files and set ownership to the non-root user
-COPY --chown=appuser:appgroup . .
-
-# Switch to the non-root user
-USER appuser
+# Copy application files
+COPY . .
 
 # Expose port 8501 for Streamlit
 EXPOSE 8501

@@ -10,12 +10,6 @@ spec:
         run.googleapis.com/launch-stage: BETA # Required for GCS FUSE
     spec:
       serviceAccountName: SERVICE_ACCOUNT_PLACEHOLDER
-      volumes:
-        - name: neo4j-data
-          csi:
-            driver: gcsfuse.run.googleapis.com
-            volumeAttributes:
-              bucketName: BUCKET_NAME_PLACEHOLDER
 
       containers:
       # 1. Streamlit Application
@@ -58,6 +52,3 @@ spec:
           limits:
             memory: 1Gi
             cpu: 1000m
-        volumeMounts:
-          - name: neo4j-data
-            mountPath: /data

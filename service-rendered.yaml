@@ -19,7 +19,7 @@ spec:
 
       containers:
       # 1. Streamlit Application
-      - image: us-central1-docker.pkg.dev/alpfr-splunk-integration/neo4j-poc-repo/frontend:20260316-180935
+      - image: us-central1-docker.pkg.dev/alpfr-splunk-integration/neo4j-poc-repo/frontend:20260316-181558
         name: frontend
         ports:
         - containerPort: 8501
@@ -54,11 +54,6 @@ spec:
           timeoutSeconds: 2
           failureThreshold: 20
           periodSeconds: 5
-        livenessProbe:
-          tcpSocket:
-            port: 7687
-          initialDelaySeconds: 10
-          periodSeconds: 15
         resources:
           limits:
             memory: 1Gi

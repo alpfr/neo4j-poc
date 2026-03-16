@@ -22,13 +22,7 @@ echo "=== Securing and Building Neo4j PoC ==="
 echo "1. Checking/Creating dedicated Service Account ($SA_NAME)..."
 gcloud iam service-accounts create $SA_NAME --display-name="Neo4j PoC Service Account" --project=$PROJECT_ID || echo "(SA exists, proceeding...)"
 
-# 2. Persistence - Data Bucket for FUSE
-echo "2. Checking/Creating GCS Bucket for Neo4j Persistence..."
-gcloud storage buckets create gs://$BUCKET_NAME --project=$PROJECT_ID --location=$REGION || echo "(Bucket exists...)"
-# Grant the service account permissions to read/write to the FUSE bucket
-gcloud storage buckets add-iam-policy-binding gs://$BUCKET_NAME \
-    --member="serviceAccount:$SA_EMAIL" \
-    --role="roles/storage.objectAdmin"
+# [Removed Data Bucket for FUSE - Not POSIX Compliance for Neo4j]
 
 # 3. Secret Management - Store Passwords Securely
 echo "3. Creating and storing secrets securely in Google Secret Manager..."
@@ -62,7 +56,6 @@ gcloud builds submit --tag $IMAGE_PATH . --project=$PROJECT_ID
 echo "6. Injecting runtime variables into service configuration..."
 sed "s|FRONTEND_IMAGE_PLACEHOLDER|$IMAGE_PATH|g" service.yaml > service-rendered.yaml
 sed -i.bak "s|SERVICE_ACCOUNT_PLACEHOLDER|$SA_EMAIL|g" service-rendered.yaml
-sed -i.bak "s|BUCKET_NAME_PLACEHOLDER|$BUCKET_NAME|g" service-rendered.yaml
 
 # 7. Cloud Run Deployment
 echo "7. Deploying Multi-Container (Sidecar) Cloud Run service with FUSE and Secrets..."
