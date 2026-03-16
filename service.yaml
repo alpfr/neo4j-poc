@@ -54,11 +54,6 @@ spec:
           timeoutSeconds: 2
           failureThreshold: 20
           periodSeconds: 5
-        livenessProbe:
-          tcpSocket:
-            port: 7687
-          initialDelaySeconds: 10
-          periodSeconds: 15
         resources:
           limits:
             memory: 1Gi
