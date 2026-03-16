@@ -15,9 +15,9 @@ steps:
       - |
         sed "s|FRONTEND_IMAGE_PLACEHOLDER|${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${COMMIT_SHA}|g" kubernetes/streamlit-deployment.yaml > kubernetes/streamlit-deployment-rendered.yaml
 
-  # 4. Deploy Manifests to GKE
+  # 4. Deploy Manifests to GKE via Kustomize
   - name: 'gcr.io/cloud-builders/kubectl'
-    args: ['apply', '-f', 'kubernetes/neo4j-statefulset.yaml', '-f', 'kubernetes/neo4j-service.yaml', '-f', 'kubernetes/streamlit-deployment-rendered.yaml', '-f', 'kubernetes/streamlit-service.yaml']
+    args: ['apply', '-k', 'kubernetes/']
     env:
       - 'CLOUDSDK_COMPUTE_REGION=${_REGION}'
       - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLUSTER_NAME}'

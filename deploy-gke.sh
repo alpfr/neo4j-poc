@@ -47,11 +47,8 @@ gcloud builds submit --tag $IMAGE_PATH . --project=$PROJECT_ID
 echo "6. Applying Kubernetes manifests..."
 sed "s|FRONTEND_IMAGE_PLACEHOLDER|$IMAGE_PATH|g" kubernetes/streamlit-deployment.yaml > kubernetes/streamlit-deployment-rendered.yaml
 
-# 7. Apply Manifests
-kubectl apply -f kubernetes/neo4j-statefulset.yaml
-kubectl apply -f kubernetes/neo4j-service.yaml
-kubectl apply -f kubernetes/streamlit-deployment-rendered.yaml
-kubectl apply -f kubernetes/streamlit-service.yaml
+# 7. Apply Manifests via Kustomize
+kubectl apply -k kubernetes/
 
 echo "---"
 echo "Deployment applied successfully to Google Kubernetes Engine (GKE)!"

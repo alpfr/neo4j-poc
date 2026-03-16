@@ -5,7 +5,7 @@ metadata:
   labels:
     app: streamlit
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: streamlit
@@ -13,17 +13,28 @@ spec:
     metadata:
       labels:
         app: streamlit
+      annotations:
+        sidecar.istio.io/inject: "true"
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8501"
     spec:
       containers:
       - name: streamlit
         image: FRONTEND_IMAGE_PLACEHOLDER
         ports:
         - containerPort: 8501
+          name: http
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
+        envFrom:
+        - configMapRef:
+            name: app-config
         env:
-        - name: NEO4J_URI
-          value: "bolt://neo4j-service:7687"
-        - name: NEO4J_USER
-          value: "neo4j"
         - name: NEO4J_PASSWORD
           valueFrom:
             secretKeyRef:

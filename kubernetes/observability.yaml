@@ -1,0 +1,27 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: neo4j-monitor
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: neo4j
+  endpoints:
+  - port: http
+    path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: streamlit-monitor
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: streamlit
+  endpoints:
+  - port: http
+    path: /metrics
