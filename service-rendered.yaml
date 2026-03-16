@@ -7,20 +7,32 @@ spec:
     metadata:
       annotations:
         run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/launch-stage: BETA # Required for GCS FUSE
     spec:
+      serviceAccountName: neo4j-poc-sa@alpfr-splunk-integration.iam.gserviceaccount.com
+      volumes:
+        - name: neo4j-data
+          csi:
+            driver: gcsfuse.run.googleapis.com
+            volumeAttributes:
+              bucketName: alpfr-splunk-integration-neo4j-data
+
       containers:
       # 1. Streamlit Application
-      - image: us-central1-docker.pkg.dev/alpfr-splunk-integration/neo4j-poc-repo/frontend:latest
+      - image: us-central1-docker.pkg.dev/alpfr-splunk-integration/neo4j-poc-repo/frontend:20260316-173930
         name: frontend
         ports:
         - containerPort: 8501
         env:
         - name: NEO4J_URI
-          value: "bolt://localhost:7687" # Talks directly to Sidecar via localhost
+          value: "bolt://localhost:7687"
         - name: NEO4J_USER
           value: "neo4j"
         - name: NEO4J_PASSWORD
-          value: "mypassword123"
+          valueFrom:
+            secretKeyRef:
+              name: neo4j-password-secret
+              key: latest
         resources:
           limits:
             memory: 512Mi
@@ -31,8 +43,26 @@ spec:
         name: neo4j-db
         env:
         - name: NEO4J_AUTH
-          value: "neo4j/mypassword123"
+          valueFrom:
+            secretKeyRef:
+               name: neo4j-auth-secret
+               key: latest
+        startupProbe:
+          tcpSocket:
+            port: 7687
+          initialDelaySeconds: 15
+          timeoutSeconds: 2
+          failureThreshold: 20
+          periodSeconds: 5
+        livenessProbe:
+          tcpSocket:
+            port: 7687
+          initialDelaySeconds: 10
+          periodSeconds: 15
         resources:
           limits:
             memory: 1Gi
             cpu: 1000m
+        volumeMounts:
+          - name: neo4j-data
+            mountPath: /data

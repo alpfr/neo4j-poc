@@ -1,14 +1,20 @@
 #!/bin/bash
 set -e
 
-PROJECT_ID="alpfr-splunk-integration"
-REGION="us-central1"
-SERVICE_NAME="neo4j-poc"
+# 1. Project Variables (Overridable via Environment Variables)
+PROJECT_ID="${PROJECT_ID:-$(gcloud config get-value project 2>/dev/null)}"
+REGION="${REGION:-us-central1}"
+SERVICE_NAME="${SERVICE_NAME:-neo4j-poc}"
+DB_PASSWORD="${DB_PASSWORD:-YourSecurePassword123!}" # Change in production!
+
+if [ -z "$PROJECT_ID" ]; then
+    echo "ERROR: PROJECT_ID is not set. Please set the PROJECT_ID environment variable or run 'gcloud config set project <your-project-id>'."
+    exit 1
+fi
 
 SA_NAME="${SERVICE_NAME}-sa"
 SA_EMAIL="${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 BUCKET_NAME="${PROJECT_ID}-neo4j-data"
-DB_PASSWORD="YourSecurePassword123!" # Change this before running in production!
 
 echo "=== Securing and Building Neo4j PoC ==="
 
