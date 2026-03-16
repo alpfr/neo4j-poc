@@ -36,12 +36,12 @@ chmod +x deploy-sidecar.sh
 ```
 
 ### What the Script Does:
-1. **Creates an Artifact Registry Repository:** Creates `neo4j-poc-repo` in `us-central1` if it doesn't already exist.
-2. **Builds the Image:** Uses Google Cloud Build to construct the Streamlit Docker image using your local `Dockerfile`, and pushes it to the registry.
-3. **Prepares the Manifest:** Finds the dynamically generated image URL and updates `service.yaml` with the current docker image path.
-4. **Deploys to Cloud Run:** Uses `gcloud run services replace` to publish the multi-container configuration.
-5. **Sets IAM Policies:** Makes the service publicly invocable (`allUsers` -> `roles/run.invoker`) so you can open the Streamlit UI without authentication.
-
+1. **Creates Identity & Storage:** Generates a dedicated Service Account and a Google Cloud Storage bucket to persist Neo4j data via Cloud Run FUSE volumes.
+2. **Manages Secrets:** Creates Google Secret Manager vaults to store the Neo4j admin passwords, meaning no credentials exist in plaintext inside the YAML.
+3. **Builds the Image:** Uses Google Cloud Build to construct the Streamlit Docker image securely (as a non-root user) and pushes it to Artifact Registry.
+4. **Prepares the Manifest:** Finds the dynamically generated image URL and updates `service.yaml` while wiring up the FUSE volumes and Secrets securely via substitutions.
+5. **Deploys to Cloud Run:** Uses `gcloud run services replace` to publish the multi-container configuration containing Neo4j's TCP Liveness Probes.
+6. **Restricts Access:** Previously public, the service is now protected by Google IAM implicitly (meaning you need IAP or `roles/run.invoker` to hit the web app).
 ## Limitations & CLI Usage
 
 Because the sidecar architecture intentionally hides the Bolt port from external traffic, **you cannot run your local `cli.py` against the Cloud Run database directly** from your personal machine.
