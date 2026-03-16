@@ -1,0 +1,38 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: neo4j-poc
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/execution-environment: gen2
+    spec:
+      containers:
+      # 1. Streamlit Application
+      - image: FRONTEND_IMAGE_PLACEHOLDER
+        name: frontend
+        ports:
+        - containerPort: 8501
+        env:
+        - name: NEO4J_URI
+          value: "bolt://localhost:7687" # Talks directly to Sidecar via localhost
+        - name: NEO4J_USER
+          value: "neo4j"
+        - name: NEO4J_PASSWORD
+          value: "mypassword123"
+        resources:
+          limits:
+            memory: 512Mi
+            cpu: 1000m
+
+      # 2. Neo4j Database Sidecar
+      - image: neo4j:5.18.0
+        name: neo4j-db
+        env:
+        - name: NEO4J_AUTH
+          value: "neo4j/mypassword123"
+        resources:
+          limits:
+            memory: 1Gi
+            cpu: 1000m
