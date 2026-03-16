@@ -20,6 +20,9 @@ gcloud services enable cloudbuild.googleapis.com
 
 # Enable IAM API
 gcloud services enable iam.googleapis.com
+
+# Enable Secret Manager API
+gcloud services enable secretmanager.googleapis.com
 ```
 
 ---
@@ -32,8 +35,9 @@ To deploy the application and manage the infrastructure using the provided scrip
 - **Service Account User** (`roles/iam.serviceAccountUser`): Required to deploy on Cloud Run (usually attached to the Compute Engine default service account).
 - **Artifact Registry Administrator** (`roles/artifactregistry.admin`): To create image repositories and push images.
 - **Cloud Build Editor** (`roles/cloudbuild.builds.editor`): To trigger and manage Cloud Build jobs.
-- **Project IAM Admin** (`roles/resourcemanager.projectIamAdmin`): (Optional, but required if you want the script to automatically invoke `add-iam-policy-binding` to make the service public).
-
+- **Project IAM Admin** (`roles/resourcemanager.projectIamAdmin`): Required to automatically provision new secure Service Accounts and assign FUSE/Secret manager bindings.
+- **Secret Manager Admin** (`roles/secretmanager.admin`): To create new vaults and inject DB passwords.
+- **Storage Admin** (`roles/storage.admin`): To create the GCS bucket for FUSE persistence.
 ---
 
 ## 3. Creating the Application
@@ -91,7 +95,16 @@ spec:
     metadata:
       annotations:
         run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/launch-stage: BETA # Required for GCS FUSE
     spec:
+      serviceAccountName: SERVICE_ACCOUNT_PLACEHOLDER
+      volumes:
+        - name: neo4j-data
+          csi:
+            driver: gcsfuse.run.googleapis.com
+            volumeAttributes:
+              bucketName: BUCKET_NAME_PLACEHOLDER
+
       containers:
       # 1. Streamlit Application
       - image: FRONTEND_IMAGE_PLACEHOLDER # Overwritten dynamically by bash script
@@ -104,62 +117,104 @@ spec:
         - name: NEO4J_USER
           value: "neo4j"
         - name: NEO4J_PASSWORD
-          value: "mypassword123"
+          valueFrom:
+            secretKeyRef:
+              name: neo4j-password-secret
+              key: latest
+        resources:
+          limits:
+            memory: 512Mi
+            cpu: 1000m
 
       # 2. Neo4j Database Sidecar
       - image: neo4j:5.18.0
         name: neo4j-db
         env:
         - name: NEO4J_AUTH
-          value: "neo4j/mypassword123"
+          valueFrom:
+            secretKeyRef:
+               name: neo4j-auth-secret
+               key: latest
+        startupProbe:
+          tcpSocket:
+            port: 7687
+          initialDelaySeconds: 15
+          timeoutSeconds: 2
+          failureThreshold: 20
+          periodSeconds: 5
+        livenessProbe:
+          tcpSocket:
+            port: 7687
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        resources:
+          limits:
+            memory: 1Gi
+            cpu: 1000m
+        volumeMounts:
+          - name: neo4j-data
+            mountPath: /data
 ```
 
 ### B. The Deployment Script (`deploy-sidecar.sh`)
 
-This script orchestrates the entire release pipeline on GCP from your local machine.
+This script orchestrates the entire secure release pipeline dynamically, allowing it to be used across any GCP Project. It pulls variables either from `.env` or from your system's active `gcloud config`.
 
 ```bash
 #!/bin/bash
 set -e
 
-PROJECT_ID="alpfr-splunk-integration"
-REGION="us-central1"
-SERVICE_NAME="neo4j-poc"
+# Project Variables (Overridable via Environment Variables)
+PROJECT_ID="${PROJECT_ID:-$(gcloud config get-value project 2>/dev/null)}"
+REGION="${REGION:-us-central1}"
+SERVICE_NAME="${SERVICE_NAME:-neo4j-poc}"
+DB_PASSWORD="${DB_PASSWORD:-YourSecurePassword123!}"
 
-# 1. Create Artifact Registry Repository (if not exists)
-# Artifact Registry is the modern replacement for Container Registry, providing secure, regional image storage.
-gcloud artifacts repositories create $SERVICE_NAME-repo ...
+echo "1. Checking/Creating dedicated Service Account ($SA_NAME)..."
+# ... creates minimal privilege Service Accounts
 
-# 2. Assign a Dynamic Image Tag & Build Streamlit Image in Cloud Build
-# Best Practice: We use a timestamp-based tag instead of 'latest' so we can confidently rollback to previous image versions.
+echo "2. Checking/Creating GCS Bucket for Neo4j Persistence..."
+# ... provisions FUSE volume for stateful data
+
+echo "3. Creating and storing secrets securely in Google Secret Manager..."
+# ... saves database passwords without writing plaintext YAML
+
+echo "4. Checking/Creating Artifact Registry repository for images..."
+# ... uses secure repository
+
+echo "5. Building Streamlit Docker image using Cloud Build..."
 TAG=$(date +%Y%m%d-%H%M%S)
-IMAGE_PATH="$REGION-docker.pkg.dev/$PROJECT_ID/$SERVICE_NAME-repo/frontend:$TAG"
-gcloud builds submit --tag $IMAGE_PATH . ...
+# ... builds and timestamps the image dynamically
 
-# 3. Inject Image URL into YAML
-sed "s|FRONTEND_IMAGE_PLACEHOLDER|$IMAGE_PATH|g" service.yaml > service-rendered.yaml
+echo "6. Injecting runtime variables into service configuration..."
+# ... replaces IMAGE, BUCKET, and SA placeholders in yaml
 
-# 4. Deploy Sidecar architecture
+echo "7. Deploying Multi-Container (Sidecar) Cloud Run service with FUSE and Secrets..."
 gcloud run services replace service-rendered.yaml ...
-
-# 5. Make publicly accessible
-gcloud run services add-iam-policy-binding $SERVICE_NAME ...
 ```
 
 ---
 
 ## 6. Execution Instructions
 
-1. Ensure `deploy-sidecar.sh` is executable:
+The deployment script supports `.env` structures out of the box so multiple Developers can securely point it at different GCP projects.
+
+1. Configure your environment by copying the template file:
+   ```bash
+   cp .env.template .env
+   ```
+2. Open `.env` and fill in your target `PROJECT_ID` and your chosen secure `DB_PASSWORD`.
+3. Ensure `deploy-sidecar.sh` is executable:
    ```bash
    chmod +x deploy-sidecar.sh
    ```
-2. Run the deployment script:
+4. Run the deployment script:
    ```bash
-   ./deploy-sidecar.sh
+   source .env && ./deploy-sidecar.sh
+   # Or simply execute it directly, as it will fallback to your active `gcloud config`
    ```
-3. Once finished, retrieve the live URL:
+5. Note: The application is deployed securely over IAM. You must access it as an authenticated Google Cloud User.
    ```bash
    gcloud run services describe neo4j-poc --region us-central1 --format="value(status.url)"
    ```
-4. Open the Web App URL, paste a Cypher query in the UI, and interact with your Cloud Run powered Neo4j Database!
+6. Open the Web App URL, paste a Cypher query in the UI, and interact with your Cloud Run powered Neo4j Database!

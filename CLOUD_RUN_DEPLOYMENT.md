@@ -28,11 +28,11 @@ Deploying the sidecar requires building the application image, writing an advanc
 
 1. Review the application code in `app.py` and the database connection settings.
 2. Ensure you have authorized the `gcloud` CLI with sufficient permissions.
-3. Run the automated Sidecar deployment script:
+3. Configure your environment by creating a `.env` file (you can copy `.env.template`). 
+4. Run the automated deployment script:
 
 ```bash
-chmod +x deploy-sidecar.sh
-./deploy-sidecar.sh
+source .env && ./deploy-sidecar.sh
 ```
 
 ### What the Script Does:
@@ -42,6 +42,7 @@ chmod +x deploy-sidecar.sh
 4. **Prepares the Manifest:** Finds the dynamically generated image URL and updates `service.yaml` while wiring up the FUSE volumes and Secrets securely via substitutions.
 5. **Deploys to Cloud Run:** Uses `gcloud run services replace` to publish the multi-container configuration containing Neo4j's TCP Liveness Probes.
 6. **Restricts Access:** Previously public, the service is now protected by Google IAM implicitly (meaning you need IAP or `roles/run.invoker` to hit the web app).
+
 ## Limitations & CLI Usage
 
 Because the sidecar architecture intentionally hides the Bolt port from external traffic, **you cannot run your local `cli.py` against the Cloud Run database directly** from your personal machine.
