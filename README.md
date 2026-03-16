@@ -7,6 +7,7 @@ For detailed explanations of the architecture, deployment scripts, and security 
 1. [GCP Deployment Guide](GCP_DEPLOYMENT_GUIDE.md) - Instructions to set up IAM, Secrets, FUSE (if used), and service deployments.
 2. [Cloud Run Deployment Reference](CLOUD_RUN_DEPLOYMENT.md) - Deep dive into the Sidecar architecture and limitations.
 3. [Sample Data & Queries](SAMPLE_DATA_AND_QUERIES.md) - How to populate the database and use the Interactive Graph Visualizer. 
+4. [Roadmap and Production Recommendations](RECOMMENDATIONS.md) - Important steps for moving from a PoC to a production-ready system.
 
 ## Features
 - **Streamlit Web UI**: Execute Cypher queries natively from your browser.
