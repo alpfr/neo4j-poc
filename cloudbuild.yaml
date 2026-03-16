@@ -1,0 +1,39 @@
+steps:
+  # 1. Build the Streamlit Container Image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${COMMIT_SHA}', '.']
+
+  # 2. Push the Image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${COMMIT_SHA}']
+
+  # 3. Inject Variables into the Cloud Run YAML
+  - name: 'ubuntu'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        sed "s|FRONTEND_IMAGE_PLACEHOLDER|${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${COMMIT_SHA}|g" service.yaml > service-rendered.yaml
+        sed -i "s|SERVICE_ACCOUNT_PLACEHOLDER|${_SERVICE_ACCOUNT_EMAIL}|g" service-rendered.yaml
+
+  # 4. Deploy to Google Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'services'
+      - 'replace'
+      - 'service-rendered.yaml'
+      - '--region'
+      - '${_REGION}'
+      - '--project'
+      - '${PROJECT_ID}'
+
+substitutions:
+  _REGION: 'us-central1'
+  _REPO_NAME: 'neo4j-poc-repo'
+  _SERVICE_NAME: 'neo4j-poc'
+  _SERVICE_ACCOUNT_EMAIL: 'neo4j-poc-sa@${PROJECT_ID}.iam.gserviceaccount.com'
+
+images:
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${COMMIT_SHA}'

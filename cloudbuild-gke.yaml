@@ -1,0 +1,31 @@
+steps:
+  # 1. Build the Streamlit Container Image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${COMMIT_SHA}', '.']
+
+  # 2. Push Image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${COMMIT_SHA}']
+
+  # 3. Inject Variables into Kubernetes YAML Map
+  - name: 'ubuntu'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        sed "s|FRONTEND_IMAGE_PLACEHOLDER|${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${COMMIT_SHA}|g" kubernetes/streamlit-deployment.yaml > kubernetes/streamlit-deployment-rendered.yaml
+
+  # 4. Deploy Manifests to GKE
+  - name: 'gcr.io/cloud-builders/kubectl'
+    args: ['apply', '-f', 'kubernetes/neo4j-statefulset.yaml', '-f', 'kubernetes/neo4j-service.yaml', '-f', 'kubernetes/streamlit-deployment-rendered.yaml', '-f', 'kubernetes/streamlit-service.yaml']
+    env:
+      - 'CLOUDSDK_COMPUTE_REGION=${_REGION}'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLUSTER_NAME}'
+
+substitutions:
+  _REGION: 'us-central1'
+  _REPO_NAME: 'neo4j-poc-repo'
+  _CLUSTER_NAME: 'neo4j-gke-cluster'
+
+images:
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${COMMIT_SHA}'
