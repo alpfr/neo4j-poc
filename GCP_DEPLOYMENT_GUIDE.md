@@ -95,15 +95,8 @@ spec:
     metadata:
       annotations:
         run.googleapis.com/execution-environment: gen2
-        run.googleapis.com/launch-stage: BETA # Required for GCS FUSE
     spec:
       serviceAccountName: SERVICE_ACCOUNT_PLACEHOLDER
-      volumes:
-        - name: neo4j-data
-          csi:
-            driver: gcsfuse.run.googleapis.com
-            volumeAttributes:
-              bucketName: BUCKET_NAME_PLACEHOLDER
 
       containers:
       # 1. Streamlit Application
@@ -142,18 +135,10 @@ spec:
           timeoutSeconds: 2
           failureThreshold: 20
           periodSeconds: 5
-        livenessProbe:
-          tcpSocket:
-            port: 7687
-          initialDelaySeconds: 10
-          periodSeconds: 15
         resources:
           limits:
             memory: 1Gi
             cpu: 1000m
-        volumeMounts:
-          - name: neo4j-data
-            mountPath: /data
 ```
 
 ### B. The Deployment Script (`deploy-sidecar.sh`)
@@ -173,8 +158,8 @@ DB_PASSWORD="${DB_PASSWORD:-YourSecurePassword123!}"
 echo "1. Checking/Creating dedicated Service Account ($SA_NAME)..."
 # ... creates minimal privilege Service Accounts
 
-echo "2. Checking/Creating GCS Bucket for Neo4j Persistence..."
-# ... provisions FUSE volume for stateful data
+echo "2. Securing Authentication (Passing)..."
+# ... creates minimal privilege Service Accounts
 
 echo "3. Creating and storing secrets securely in Google Secret Manager..."
 # ... saves database passwords without writing plaintext YAML
@@ -187,9 +172,9 @@ TAG=$(date +%Y%m%d-%H%M%S)
 # ... builds and timestamps the image dynamically
 
 echo "6. Injecting runtime variables into service configuration..."
-# ... replaces IMAGE, BUCKET, and SA placeholders in yaml
+# ... replaces IMAGE and SA placeholders in yaml
 
-echo "7. Deploying Multi-Container (Sidecar) Cloud Run service with FUSE and Secrets..."
+echo "7. Deploying Multi-Container (Sidecar) Cloud Run service with Secrets..."
 gcloud run services replace service-rendered.yaml ...
 ```
 

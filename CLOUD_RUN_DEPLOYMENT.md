@@ -51,3 +51,18 @@ To use the Python CLI:
 - Use it locally while running a local Neo4j Docker container (`bolt://localhost:7687`).
 - Connect it to a managed Neo4j Aura cluster (`neo4j+s://...`).
 - Execute commands securely in the browser through the deployed Streamlit app instead.
+
+### Accessing Neo4j from Other Applications
+
+Because of the Sidecar Architecture, **other applications cannot connect directly to this Neo4j database.** Cloud Run strictly blocks arbitrary TCP ports (like Neo4j's Bolt port `7687`) from the outside world.
+
+If you need multiple external applications (like other microservices, mobile apps, or local CLI scripts) to connect to the same Neo4j database, you must unbundle the Sidecar. Your three options are:
+
+1. **Build an API Gateway (The "Cloud Run" Way)**
+   Replace Streamlit with a Python API (using FastAPI/Flask). Your API safely receives standard HTTP requests, connects to the local Neo4j sidecar, and returns the graph data as standard JSON.
+   
+2. **Use Neo4j AuraDB (The "Managed Cloud" Way - Recommended)**
+   Stop self-hosting the database entirely. Use Neo4j AuraDB (which has a free tier) to get a secure `neo4j+s://` URI endpoint. Your Streamlit app, CLI scripts, and any other external application can connect directly without worrying about TCP networking or sidecars.
+   
+3. **Deploy to a Dedicated VM or Kubernetes (The "DevOps" Way)**
+   Deploy Neo4j onto a standard Google Compute Engine VM or an internal GKE StatefulSet, where you have full control over opening port 7687 on the VPC Firewall.
