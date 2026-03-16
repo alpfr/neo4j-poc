@@ -19,7 +19,7 @@ spec:
 
       containers:
       # 1. Streamlit Application
-      - image: us-central1-docker.pkg.dev/alpfr-splunk-integration/neo4j-poc-repo/frontend:20260316-175311
+      - image: us-central1-docker.pkg.dev/alpfr-splunk-integration/neo4j-poc-repo/frontend:20260316-175754
         name: frontend
         ports:
         - containerPort: 8501

@@ -62,11 +62,14 @@ if st.button("Execute Query"):
                     # In neo4j python driver 5.x, calling .graph() consumes the cursor. We rerun quickly to fetch raw records for the table layout.
                     result_data = session.run(query)
                     records = []
-                    for r in result_data:
+                    for row in result_data:
                         safe_row = {}
-                        for key, value in r.data().items():
-                            # Safely convert complex Neo4j types (dicts, lists) to strings to prevent Pandas Conversion errors
-                            safe_row[key] = str(value) if isinstance(value, (dict, list, tuple)) else value
+                        for key, value in row.data().items():
+                            # Force everything to be a string unless it's a basic primitive, avoiding ALL Pandas type errors
+                            if isinstance(value, (int, float, str, bool)) and value is not None:
+                                safe_row[key] = value
+                            else:
+                                safe_row[key] = str(value)
                         records.append(safe_row)
                         
                     if records:
