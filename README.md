@@ -10,6 +10,7 @@ For detailed explanations of the dual deployments (Serverless vs Container Orche
 4. [Sample Data & Queries](SAMPLE_DATA_AND_QUERIES.md) - How to populate the database and use the Interactive Graph Visualizer. 
 5. [Roadmap and Production Recommendations](RECOMMENDATIONS.md) - Important steps for moving from a PoC to a production-ready system.
 6. [PostgreSQL on Cloud Run Sample](POSTGRES_CLOUDRUN_SAMPLE.md) - Sample CI/CD pipeline and Bash scripts for deploying to Cloud Run with native Cloud SQL integration.
+7. [Automated CI/CD Triggers Guide](CI_CD_TRIGGERS_GUIDE.md) - Instructions on linking GitHub and GitLab to Google Cloud Build.
 
 ## Features
 - **Streamlit Web UI**: Execute Cypher queries natively from your browser.
