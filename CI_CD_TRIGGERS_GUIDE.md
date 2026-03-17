@@ -20,10 +20,8 @@ By default, the Cloud Build service account looks like:
     *   `Service Account User`
 *   **For PostgreSQL Deployments (`cloudbuild-postgres.yaml`):**
     *   `Cloud SQL Admin` (Required to dynamically spin up new databases)
-*   **For GKE Kubernetes Deployments (`cloudbuild-gke.yaml`):**
-    *   `Kubernetes Engine Developer`
-*   **Global Logging Requirement (For Custom Service Accounts):**
-    *   `Logs Writer` (`roles/logging.logWriter`) - Essential for the build system to actually stream execution logs to the GCP console.
+*   **Cloud Build UI Logging:**
+    *   Our pipelines are configured with `defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET`. This automatically routes build logs to a secure Google Cloud Storage bucket in your region, successfully bypassing common UI display errors involving `Logs Viewer` or `Logs Writer` permissions when utilizing custom IAM identities!
 
 ---
 
