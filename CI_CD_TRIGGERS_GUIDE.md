@@ -13,7 +13,14 @@ Before setting up a trigger, you must ensure the Cloud Build Service Account has
 By default, the Cloud Build service account looks like:
 `[PROJECT_NUMBER]@cloudbuild.gserviceaccount.com`
 
-**Go to IAM & Admin > IAM and verify the following roles.**
+**Automated IAM Setup:**
+We have provided a deployment script that will automatically apply all required IAM roles to your service account. Simply run:
+```bash
+chmod +x assign-iam-roles.sh
+./assign-iam-roles.sh
+```
+
+**Go to IAM & Admin > IAM and manually verify the following roles.**
 
 *   **For Cloud Run Deployments (Default):**
     *   `Cloud Run Admin`
