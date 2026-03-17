@@ -120,7 +120,7 @@ images:
   - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/app:${COMMIT_SHA}'
 
 options:
-  logging: CLOUD_LOGGING_ONLY
+  defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
 ```
 
 ### Key Difference from Neo4j Sidecars
