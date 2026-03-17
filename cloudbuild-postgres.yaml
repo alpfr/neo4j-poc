@@ -1,0 +1,55 @@
+steps:
+  # 1. Provision Cloud SQL PostgreSQL (Only creates if missing)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if ! gcloud sql instances describe ${_DB_INSTANCE_NAME} --project=${PROJECT_ID} > /dev/null 2>&1; then
+          echo "Creating Cloud SQL PostgreSQL instance..."
+          gcloud sql instances create ${_DB_INSTANCE_NAME} \
+            --database-version=POSTGRES_15 \
+            --tier=db-f1-micro \
+            --region=${_REGION} \
+            --project=${PROJECT_ID} \
+            --root-password=${_DB_ROOT_PASSWORD}
+            
+          gcloud sql databases create ${_DB_NAME} \
+            --instance=${_DB_INSTANCE_NAME} \
+            --project=${PROJECT_ID}
+        else
+          echo "Cloud SQL instance already exists."
+        fi
+
+  # 2. Build the Application Container
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/app:${COMMIT_SHA}', '.']
+
+  # 3. Push Container to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/app:${COMMIT_SHA}']
+
+  # 4. Deploy to Cloud Run with attached Postgres DB
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud run deploy ${_SERVICE_NAME} \
+          --image ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/app:${COMMIT_SHA} \
+          --region ${_REGION} \
+          --project ${PROJECT_ID} \
+          --add-cloudsql-instances ${PROJECT_ID}:${_REGION}:${_DB_INSTANCE_NAME} \
+          --set-env-vars DB_USER=postgres,DB_PASS=${_DB_ROOT_PASSWORD},DB_NAME=${_DB_NAME},DB_HOST=/cloudsql/${PROJECT_ID}:${_REGION}:${_DB_INSTANCE_NAME} \
+          --allow-unauthenticated
+
+substitutions:
+  _REGION: 'us-central1'
+  _REPO_NAME: 'postgres-poc-repo'
+  _SERVICE_NAME: 'postgres-app'
+  _DB_INSTANCE_NAME: 'production-postgres-db'
+  _DB_NAME: 'app_database'
+  _DB_ROOT_PASSWORD: 'ChangeMeInCloudBuildTriggers!' # In a real scenario, use Secret Manager!
+
+images:
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/app:${COMMIT_SHA}'
