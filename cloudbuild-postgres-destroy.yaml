@@ -1,0 +1,32 @@
+steps:
+  # 1. Delete Cloud Run Service
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Deleting Cloud Run service ${_SERVICE_NAME}..."
+        gcloud run services delete ${_SERVICE_NAME} \
+          --region=${_REGION} \
+          --project=${PROJECT_ID} \
+          --quiet || echo "Service not found or already deleted."
+
+  # 2. Delete Cloud SQL PostgreSQL Instance
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Deleting Cloud SQL PostgreSQL instance ${_DB_INSTANCE_NAME}..."
+        # The --quiet flag is essential to bypass the interactive confirmation prompt
+        gcloud sql instances delete ${_DB_INSTANCE_NAME} \
+          --project=${PROJECT_ID} \
+          --quiet || echo "Database instance not found or already deleted."
+
+substitutions:
+  _REGION: 'us-central1'
+  _SERVICE_NAME: 'postgres-app'
+  _DB_INSTANCE_NAME: 'production-postgres-db'
+
+options:
+  defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET

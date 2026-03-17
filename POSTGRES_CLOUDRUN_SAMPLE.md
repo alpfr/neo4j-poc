@@ -125,3 +125,46 @@ options:
 
 ### Key Difference from Neo4j Sidecars
 Notice the `--add-cloudsql-instances` flag. Google Cloud Run has built-in native support for Cloud SQL! Unlike Neo4j where we had to inject a full database instance inside a "Sidecar" container in the same pod, Google automatically securely mounts the Postgres database socket directly at `/cloudsql/` so your application code can connect to it seamlessly via Unix Domain Sockets without exposing the database to the public internet!
+
+---
+
+## 3. Automated Deletion Pipeline (Teardown)
+
+If you are running ephemeral environments or need to safely tear down the provisioned Cloud SQL database and Cloud Run service via an automated pipeline, you can use the `cloudbuild-postgres-destroy.yaml` file.
+
+This pipeline gracefully deletes both the Cloud Run deployment and the Cloud SQL databases instances.
+
+```yaml
+steps:
+  # 1. Delete Cloud Run Service
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Deleting Cloud Run service ${_SERVICE_NAME}..."
+        gcloud run services delete ${_SERVICE_NAME} \
+          --region=${_REGION} \
+          --project=${PROJECT_ID} \
+          --quiet || echo "Service not found or already deleted."
+
+  # 2. Delete Cloud SQL PostgreSQL Instance
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Deleting Cloud SQL PostgreSQL instance ${_DB_INSTANCE_NAME}..."
+        # The --quiet flag is essential to bypass the interactive confirmation prompt
+        gcloud sql instances delete ${_DB_INSTANCE_NAME} \
+          --project=${PROJECT_ID} \
+          --quiet || echo "Database instance not found or already deleted."
+
+substitutions:
+  _REGION: 'us-central1'
+  _SERVICE_NAME: 'postgres-app'
+  _DB_INSTANCE_NAME: 'production-postgres-db'
+
+options:
+  defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
+```
