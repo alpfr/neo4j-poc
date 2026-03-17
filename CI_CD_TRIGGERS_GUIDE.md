@@ -22,6 +22,8 @@ By default, the Cloud Build service account looks like:
     *   `Cloud SQL Admin` (Required to dynamically spin up new databases)
 *   **For GKE Kubernetes Deployments (`cloudbuild-gke.yaml`):**
     *   `Kubernetes Engine Developer`
+*   **Global Logging Requirement (For Custom Service Accounts):**
+    *   `Logs Writer` (`roles/logging.logWriter`) - Essential for the build system to actually stream execution logs to the GCP console.
 
 ---
 
