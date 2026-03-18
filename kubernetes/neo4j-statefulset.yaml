@@ -18,6 +18,10 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "7474"
     spec:
+      securityContext:
+        fsGroup: 7474
+        runAsUser: 7474
+        runAsNonRoot: true
       containers:
       - name: neo4j
         image: neo4j:5.18.0
