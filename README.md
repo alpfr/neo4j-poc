@@ -20,9 +20,13 @@ For detailed explanations of the dual deployments (Serverless vs Container Orche
 
 ## Quickstart (Manual Deployment)
 1. Set up your `.env` file using `.env.template`.
-2. Ensure you have the required GCP Permissions.
+2. Ensure you have the required GCP Permissions. You can check your or your Service Account's permissions by running `./verify-iam-roles.sh`. If you are missing roles, run `./assign-iam-roles.sh`.
 3. Execute `./deploy-sidecar.sh` (for Cloud Run) or `./deploy-gke.sh` (for Kubernetes).
 
 ## Automated Deployment (CI/CD)
 This project includes automated Google Cloud Build pipelines. 
-By connecting this repository to a Cloud Build Trigger targeting `main`, both `cloudbuild.yaml` (Cloud Run) and `cloudbuild-gke.yaml` (Kubernetes) can automatically build and deploy new code updates on every push.
+By connecting this repository to a Cloud Build Trigger targeting `main`, the CI systems automatically build and deploy new code updates on every push.
+- `cloudbuild.yaml` - Cloud Run and Neo4j Sidecar
+- `cloudbuild-gke.yaml` - Kubernetes standard deployment
+- `cloudbuild-postgres.yaml` - Provision and deploy Cloud Run with a fully managed Cloud SQL database instance.
+- `cloudbuild-postgres-destroy.yaml` - Teardown pipeline to delete the Cloud Run instance and delete the Cloud SQL database entirely (saves money).
