@@ -1,11 +1,11 @@
 steps:
   # 1. Build the Streamlit Container Image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${COMMIT_SHA}', '.']
+    args: ['build', '-t', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${BUILD_ID}', '.']
 
   # 2. Push Image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${COMMIT_SHA}']
+    args: ['push', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${BUILD_ID}']
 
   # 3. Inject Variables into Kubernetes YAML Map
   - name: 'ubuntu'
@@ -16,7 +16,7 @@ steps:
         cd kubernetes
         wget https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.0.0/kustomize_v5.0.0_linux_amd64.tar.gz
         tar -xzf kustomize_v5.0.0_linux_amd64.tar.gz
-        ./kustomize edit set image FRONTEND_IMAGE_PLACEHOLDER=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${COMMIT_SHA}
+        ./kustomize edit set image FRONTEND_IMAGE_PLACEHOLDER=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${BUILD_ID}
 
   # 4. Deploy Manifests to GKE via Kustomize
   - name: 'gcr.io/cloud-builders/kubectl'
@@ -31,7 +31,7 @@ substitutions:
   _CLUSTER_NAME: 'neo4j-gke-cluster'
 
 images:
-  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${COMMIT_SHA}'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${BUILD_ID}'
 
 options:
   defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
