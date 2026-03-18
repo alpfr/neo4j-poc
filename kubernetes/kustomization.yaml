@@ -10,7 +10,5 @@ resources:
   - streamlit-service.yaml
   - streamlit-deployment.yaml
   - ingress.yaml
-  - virtualservice.yaml
   - hpa.yaml
   - vpa.yaml
-  - observability.yaml
