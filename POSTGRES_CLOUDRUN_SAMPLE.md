@@ -168,3 +168,13 @@ substitutions:
 options:
   defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
 ```
+
+### Triggering the Teardown Manually
+
+If you prefer to delete everything directly from your local terminal instead of setting up a Cloud Build Webhook, you can use `gcloud builds submit` and simply point it specifically to the destroy `yaml` file:
+
+```bash
+gcloud builds submit --config cloudbuild-postgres-destroy.yaml \
+  --project="your-project-id" \
+  --substitutions=_SERVICE_NAME="postgres-app",_DB_INSTANCE_NAME="production-postgres-db"
+```
