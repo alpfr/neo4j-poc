@@ -37,11 +37,53 @@ source .env && ./deploy-sidecar.sh
 
 ### What the Script Does:
 1. **Creates Identity & Storage:** Generates a dedicated Service Account and a Google Cloud Storage bucket to persist Neo4j data via Cloud Run FUSE volumes.
-2. **Manages Secrets:** Creates Google Secret Manager vaults to store the Neo4j admin passwords, meaning no credentials exist in plaintext inside the YAML.
+2. **Manages Secrets:** Creates Google Cloud Secret Manager vaults to store the Neo4j admin passwords, meaning no credentials exist in plaintext inside the YAML.
 3. **Builds the Image:** Uses Google Cloud Build to construct the Streamlit Docker image securely (as a non-root user) and pushes it to Artifact Registry.
 4. **Prepares the Manifest:** Finds the dynamically generated image URL and updates `service.yaml` while wiring up the FUSE volumes and Secrets securely via substitutions.
 5. **Deploys to Cloud Run:** Uses `gcloud run services replace` to publish the multi-container configuration containing Neo4j's TCP Liveness Probes.
 6. **Restricts Access:** Previously public, the service is now protected by Google IAM implicitly (meaning you need IAP or `roles/run.invoker` to hit the web app).
+
+---
+
+## Manual Deployment (Step-by-Step)
+
+If you prefer to bypass the wrapper script and execute the architecture piece-by-piece via Cloud Build, run these raw terminal commands:
+
+### Step 1: Secure Your Permissions & Storage
+Ensure your `gcloud` account is authorized:
+```bash
+gcloud auth login
+```
+*(If you are deploying this manually via a Service Account pipeline, ensure it has been granted permissions using `./assign-iam-roles.sh`)*.
+
+### Step 2: Establish the Secret Manager Vaults
+Instead of committing plain-text database passwords, create securely encrypted vaults.
+```bash
+export DB_PASSWORD="YourSecurePassword123!"
+
+gcloud secrets create neo4j-password-secret --replication-policy="automatic"
+gcloud secrets create neo4j-auth-secret --replication-policy="automatic"
+
+echo -n "${DB_PASSWORD}" | gcloud secrets versions add neo4j-password-secret --data-file=-
+echo -n "neo4j/${DB_PASSWORD}" | gcloud secrets versions add neo4j-auth-secret --data-file=-
+```
+
+### Step 3: Scaffold an Artifact Registry
+Cloud Build needs a secure digital warehouse to store the compiled Docker image.
+```bash
+gcloud artifacts repositories create neo4j-poc-repo \
+  --repository-format=docker \
+  --location=us-central1 \
+  --description="Private Docker repository for Neo4j Streamlit app"
+```
+
+### Step 4: Execute the Cloud Build Pipeline
+This securely compiles your Streamlit Application, pushes it to your new Artifact Registry, and natively injects your unique variables straight into `service.yaml`.
+```bash
+gcloud builds submit --config cloudbuild.yaml \
+  --project="alpfr-splunk-integration" \
+  --substitutions=_REGION="us-central1",_REPO_NAME="neo4j-poc-repo",_SERVICE_NAME="neo4j-poc",_SERVICE_ACCOUNT_EMAIL="neo4j-poc-sa@alpfr-splunk-integration.iam.gserviceaccount.com"
+```
 
 ## Limitations & CLI Usage
 
