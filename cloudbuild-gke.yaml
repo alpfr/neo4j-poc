@@ -8,13 +8,13 @@ steps:
     args: ['push', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${BUILD_ID}']
 
   # 3. Inject Variables into Kubernetes YAML Map
-  - name: 'ubuntu'
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
         cd kubernetes
-        wget https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.0.0/kustomize_v5.0.0_linux_amd64.tar.gz
+        curl -sLo kustomize_v5.0.0_linux_amd64.tar.gz https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.0.0/kustomize_v5.0.0_linux_amd64.tar.gz
         tar -xzf kustomize_v5.0.0_linux_amd64.tar.gz
         ./kustomize edit set image FRONTEND_IMAGE_PLACEHOLDER=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${BUILD_ID}
 
