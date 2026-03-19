@@ -9,6 +9,5 @@ resources:
   - neo4j-statefulset.yaml
   - streamlit-service.yaml
   - streamlit-deployment.yaml
-  - ingress.yaml
   - hpa.yaml
   - vpa.yaml

@@ -5,7 +5,7 @@ metadata:
   labels:
     app: streamlit
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
   - port: 8501
     targetPort: 8501
