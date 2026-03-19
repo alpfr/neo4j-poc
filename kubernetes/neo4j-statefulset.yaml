@@ -36,11 +36,24 @@ spec:
           value: "neo4j/$(NEO4J_PASSWORD)"
         - name: NEO4J_server_default__listen__address
           value: "0.0.0.0"
+        - name: NEO4J_server_bolt_listen__address
+          value: "0.0.0.0:7687"
         ports:
         - containerPort: 7687
           name: bolt
         - containerPort: 7474
           name: http
+        startupProbe:
+          tcpSocket:
+            port: 7687
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          failureThreshold: 20
+        readinessProbe:
+          tcpSocket:
+            port: 7687
+          initialDelaySeconds: 5
+          periodSeconds: 10
         resources:
           requests:
             cpu: "500m"
