@@ -18,6 +18,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "7474"
     spec:
+      enableServiceLinks: false
       securityContext:
         fsGroup: 7474
         runAsUser: 7474
